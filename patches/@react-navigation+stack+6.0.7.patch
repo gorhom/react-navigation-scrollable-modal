@@ -1,34 +1,100 @@
+diff --git a/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts b/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts
+index 35a863b..66239cd 100644
+--- a/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts
++++ b/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts
+@@ -22,6 +22,8 @@ export { default as CardAnimationContext } from './utils/CardAnimationContext';
+ export { default as GestureHandlerRefContext } from './utils/GestureHandlerRefContext';
+ export { default as useCardAnimation } from './utils/useCardAnimation';
+ export { default as useGestureHandlerRef } from './utils/useGestureHandlerRef';
++export { CardModalGestureContext } from './utils/CardModalGestureContext';
++
+ /**
+  * Types
+  */
+diff --git a/node_modules/@react-navigation/stack/lib/typescript/src/utils/CardModalGestureContext.d.ts b/node_modules/@react-navigation/stack/lib/typescript/src/utils/CardModalGestureContext.d.ts
+new file mode 100644
+index 0000000..590bf05
+--- /dev/null
++++ b/node_modules/@react-navigation/stack/lib/typescript/src/utils/CardModalGestureContext.d.ts
+@@ -0,0 +1,9 @@
++import * as React from 'react';
++import type { Animated } from 'react-native';
++
++export interface CardModalGestureContextType {
++  scrollableGestureRef: React.RefObject<any>;
++  cardModalTranslateY: Animated.Value;
++}
++
++export declare const CardModalGestureContext: React.Context<CardModalGestureContextType>;
+diff --git a/node_modules/@react-navigation/stack/src/index.tsx b/node_modules/@react-navigation/stack/src/index.tsx
+index f20d3fb..d914384 100644
+--- a/node_modules/@react-navigation/stack/src/index.tsx
++++ b/node_modules/@react-navigation/stack/src/index.tsx
+@@ -31,6 +31,7 @@ export { default as CardAnimationContext } from './utils/CardAnimationContext';
+ export { default as GestureHandlerRefContext } from './utils/GestureHandlerRefContext';
+ export { default as useCardAnimation } from './utils/useCardAnimation';
+ export { default as useGestureHandlerRef } from './utils/useGestureHandlerRef';
++export { CardModalGestureContext } from './utils/CardModalGestureContext';
+ 
+ /**
+  * Types
+diff --git a/node_modules/@react-navigation/stack/src/utils/CardModalGestureContext.ts b/node_modules/@react-navigation/stack/src/utils/CardModalGestureContext.ts
+new file mode 100644
+index 0000000..c2e32db
+--- /dev/null
++++ b/node_modules/@react-navigation/stack/src/utils/CardModalGestureContext.ts
+@@ -0,0 +1,9 @@
++import React from 'react';
++import { Animated } from 'react-native';
++
++interface CardModalGestureContextType {
++  scrollableGestureRef: React.RefObject<any>;
++  cardModalTranslateY: Animated.Value;
++}
++
++export const CardModalGestureContext = React.createContext<CardModalGestureContextType | null>(null)
+\ No newline at end of file
 diff --git a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
-index a013ff9..c99c5ab 100755
+index a013ff9..6a6e5f9 100755
 --- a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
 +++ b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
-@@ -89,6 +89,8 @@ const hasOpacityStyle = (style: any) => {
-   return false;
- };
+@@ -21,6 +21,7 @@ import type {
+   TransitionSpec,
+ } from '../../types';
+ import CardAnimationContext from '../../utils/CardAnimationContext';
++import { CardModalGestureContext } from '../../utils/CardModalGestureContext';
+ import getDistanceForDirection from '../../utils/getDistanceForDirection';
+ import getInvertedMultiplier from '../../utils/getInvertedMultiplier';
+ import memoize from '../../utils/memoize';
+@@ -294,6 +295,8 @@ export default class Card extends React.Component<Props> {
+       case GestureState.END: {
+         this.isSwiping.setValue(FALSE);
  
-+export const CardContext = React.createContext(null)
++        this.isSwiping.removeListener
 +
- export default class Card extends React.Component<Props> {
-   static defaultProps = {
-     shadowEnabled: false,
-@@ -303,8 +305,15 @@ export default class Card extends React.Component<Props> {
+         let distance;
+         let translation;
+         let velocity;
+@@ -303,8 +306,16 @@ export default class Card extends React.Component<Props> {
            gestureDirection === 'vertical-inverted'
          ) {
            distance = layout.height;
 -          translation = nativeEvent.translationY;
 -          velocity = nativeEvent.velocityY;
-+          // translation = nativeEvent.translationY;
++          // @ts-ignore
 +          if(this.props.gesture._offset < 0) {
++            // @ts-ignore
 +            translation = this.props.gesture._offset - this.props.gesture._value;
 +            velocity = nativeEvent.velocityY / 2;
 +          }else{
++            // @ts-ignore
 +            translation = this.props.gesture._value;
 +            velocity = nativeEvent.velocityY;
 +          }
          } else {
            distance = layout.width;
            translation = nativeEvent.translationX;
-@@ -392,7 +401,7 @@ export default class Card extends React.Component<Props> {
+@@ -392,7 +403,7 @@ export default class Card extends React.Component<Props> {
        return {
          maxDeltaX: 15,
          minOffsetY: 5,
@@ -37,7 +103,7 @@ index a013ff9..c99c5ab 100755
          enableTrackpadTwoFingerGesture,
        };
      } else if (gestureDirection === 'vertical-inverted') {
-@@ -425,6 +434,7 @@ export default class Card extends React.Component<Props> {
+@@ -425,6 +436,7 @@ export default class Card extends React.Component<Props> {
    }
  
    private contentRef = React.createRef<View>();
@@ -45,11 +111,11 @@ index a013ff9..c99c5ab 100755
  
    render() {
      const {
-@@ -526,10 +536,12 @@ export default class Card extends React.Component<Props> {
+@@ -526,10 +538,12 @@ export default class Card extends React.Component<Props> {
              style={[styles.container, containerStyle, customContainerStyle]}
              pointerEvents="box-none"
            >
-+            <CardContext.Provider value={{ scrollableGestureRef: this.scrollableGestureRef, cardPanTranslateY: gesture }}>
++            <CardModalGestureContext.Provider value={{ scrollableGestureRef: this.scrollableGestureRef, cardModalTranslateY: gesture }}>
              <PanGestureHandler
                enabled={layout.width !== 0 && gestureEnabled}
                onGestureEvent={handleGestureEvent}
@@ -58,11 +124,11 @@ index a013ff9..c99c5ab 100755
                {...this.gestureActivationCriteria()}
              >
                <Animated.View
-@@ -563,6 +575,7 @@ export default class Card extends React.Component<Props> {
+@@ -563,6 +577,7 @@ export default class Card extends React.Component<Props> {
                  </CardSheet>
                </Animated.View>
              </PanGestureHandler>
-+            </CardContext.Provider>
++            </CardModalGestureContext.Provider>
            </Animated.View>
          </View>
        </CardAnimationContext.Provider>

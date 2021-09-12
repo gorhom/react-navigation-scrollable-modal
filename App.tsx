@@ -9,11 +9,11 @@ const Stack = createStackNavigator();
 export default () => (
   <NavigationContainer>
     <Stack.Navigator>
-      <Stack.Screen name="home" component={Home} />
+      <Stack.Screen name="home" component={Home} options={{ title: "Home" }} />
       <Stack.Screen
         name="modal"
         component={Modal}
-        options={{ presentation: "modal" }}
+        options={{ title: "Scrollable Modal", presentation: "modal" }}
       />
     </Stack.Navigator>
   </NavigationContainer>
