@@ -70,7 +70,7 @@ index 0000000..4b041b8
 +  return <>{props.children}</>;
 +};
 diff --git a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
-index a013ff9..fd8deb5 100755
+index a013ff9..5542ab4 100755
 --- a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
 +++ b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
 @@ -21,6 +21,10 @@ import type {
@@ -133,7 +133,7 @@ index a013ff9..fd8deb5 100755
              style={[styles.container, containerStyle, customContainerStyle]}
              pointerEvents="box-none"
            >
-+            <CardModalGestureContextProvider enable={getIsModalPresentation(styleInterpolator)} value={{ scrollableGestureRef: this.scrollableGestureRef, cardModalTranslateY: gesture }}>
++            <CardModalGestureContextProvider enable={!next && getIsModalPresentation(styleInterpolator)} value={{ scrollableGestureRef: this.scrollableGestureRef, cardModalTranslateY: gesture }}>
              <PanGestureHandler
                enabled={layout.width !== 0 && gestureEnabled}
                onGestureEvent={handleGestureEvent}
