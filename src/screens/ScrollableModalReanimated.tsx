@@ -2,7 +2,8 @@ import React from "react";
 import { FlatList, FlatListProps, StyleSheet, Text, View } from "react-native";
 import { NativeViewGestureHandler } from "react-native-gesture-handler";
 import Animated, { useAnimatedRef } from "react-native-reanimated";
-import { useCardModalGestureInteraction } from "./useCardModalGestureInteraction";
+import { useScrollableModalGestureInteractionReanimated } from "../hooks/useScrollableModalGestureInteractionReanimated";
+import { Item } from '../components/Item'
 
 const AnimatedFlatList =
   Animated.createAnimatedComponent<FlatListProps<any>>(FlatList);
@@ -14,17 +15,13 @@ const data = Array(40)
 const keyExtractor = (item: any) => `item-${item}`;
 
 // @ts-ignore
-const renderItem = ({ item }) => (
-  <View style={styles.item}>
-    <Text>{item}</Text>
-  </View>
-);
+const renderItem = ({ item }) => (<Item item={item} />);
 
-export const Modal = () => {
+export const ScrollableModalReanimated = () => {
   const scrollableRef = useAnimatedRef<FlatList>();
 
   const { scrollableGestureRef, handleScrolling } =
-    useCardModalGestureInteraction(scrollableRef);
+    useScrollableModalGestureInteractionReanimated(scrollableRef);
 
   return (
     <NativeViewGestureHandler ref={scrollableGestureRef}>
@@ -37,6 +34,9 @@ export const Modal = () => {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
         renderItem={renderItem}
+        initialNumToRender={15}
+        maxToRenderPerBatch={5}
+        windowSize={15}
       />
     </NativeViewGestureHandler>
   );

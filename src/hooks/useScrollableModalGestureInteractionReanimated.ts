@@ -1,5 +1,5 @@
 import { useCallback, useContext, useEffect } from "react";
-import { CardModalGestureContext } from "@react-navigation/stack";
+import { ModalGestureContext } from "@react-navigation/stack";
 import {
   runOnJS,
   scrollTo,
@@ -8,22 +8,24 @@ import {
 } from "react-native-reanimated";
 import type { FlatList, ScrollView } from "react-native";
 
-export const useCardModalGestureInteraction = (
+export const useScrollableModalGestureInteractionReanimated = (
   scrollableRef: React.RefObject<ScrollView | FlatList>
 ) => {
   // context
-  const { scrollableGestureRef, cardModalTranslateY } = useContext(CardModalGestureContext);
+  const { scrollableGestureRef, modalTranslateY } = useContext(ModalGestureContext);
 
   // variables
   const lockScrolling = useSharedValue(true);
 
   // callback
   const setCardPanTranslateYOffset = useCallback((value: number) => {
-    cardModalTranslateY.setOffset(-value);
+    modalTranslateY.setOffset(-value);
+    console.log('offset', -value);
   }, []);
   const setLockScrolling = useCallback(
     ({ value }) => {
       lockScrolling.value = value > 0;
+      console.log('lockScrolling', value > 0);
     },
     [lockScrolling]
   );
@@ -33,10 +35,17 @@ export const useCardModalGestureInteraction = (
         runOnJS(setCardPanTranslateYOffset)(y);
       },
       onScroll: ({ contentOffset: { y } }) => {
+        console.log('onScroll', y <= 0, lockScrolling.value)
         if (y <= 0 || lockScrolling.value) {
           // @ts-ignore
           scrollTo(scrollableRef, 0, 0, false);
         }
+      },
+      onEndDrag: ({ contentOffset: { y } }) => {
+        runOnJS(setCardPanTranslateYOffset)(y);
+      },
+      onMomentumEnd: ({ contentOffset: { y } }) => {
+        runOnJS(setCardPanTranslateYOffset)(y);
       },
     },
     [lockScrolling, setCardPanTranslateYOffset]
@@ -44,9 +53,9 @@ export const useCardModalGestureInteraction = (
 
   // effects
   useEffect(() => {
-    const listener = cardModalTranslateY.addListener(setLockScrolling);
+    const listener = modalTranslateY.addListener(setLockScrolling);
     return () => {
-      cardModalTranslateY.removeListener(listener);
+      modalTranslateY.removeListener(listener);
     };
   }, []);
 
