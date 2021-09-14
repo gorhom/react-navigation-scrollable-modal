@@ -1,152 +1,249 @@
 diff --git a/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts b/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts
-index 35a863b..66239cd 100644
+index 35a863b..d8dbca3 100644
 --- a/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts
 +++ b/node_modules/@react-navigation/stack/lib/typescript/src/index.d.ts
 @@ -22,6 +22,8 @@ export { default as CardAnimationContext } from './utils/CardAnimationContext';
  export { default as GestureHandlerRefContext } from './utils/GestureHandlerRefContext';
  export { default as useCardAnimation } from './utils/useCardAnimation';
  export { default as useGestureHandlerRef } from './utils/useGestureHandlerRef';
-+export { CardModalGestureContext } from './utils/CardModalGestureContext';
++export { ModalGestureContext, ModalGestureContextType } from './utils/ModalGestureContext';
 +
  /**
   * Types
   */
-diff --git a/node_modules/@react-navigation/stack/lib/typescript/src/utils/CardModalGestureContext.d.ts b/node_modules/@react-navigation/stack/lib/typescript/src/utils/CardModalGestureContext.d.ts
+diff --git a/node_modules/@react-navigation/stack/lib/typescript/src/utils/ModalGestureContext.ts b/node_modules/@react-navigation/stack/lib/typescript/src/utils/ModalGestureContext.ts
 new file mode 100644
-index 0000000..590bf05
+index 0000000..9cd9184
 --- /dev/null
-+++ b/node_modules/@react-navigation/stack/lib/typescript/src/utils/CardModalGestureContext.d.ts
++++ b/node_modules/@react-navigation/stack/lib/typescript/src/utils/ModalGestureContext.ts
 @@ -0,0 +1,9 @@
 +import * as React from 'react';
 +import type { Animated } from 'react-native';
 +
-+export interface CardModalGestureContextType {
++export interface ModalGestureContextType {
 +  scrollableGestureRef: React.RefObject<any>;
-+  cardModalTranslateY: Animated.Value;
++  modalTranslateY: Animated.Value;
 +}
 +
-+export declare const CardModalGestureContext: React.Context<CardModalGestureContextType>;
++export declare const ModalGestureContext: React.Context<ModalGestureContextType>;
 diff --git a/node_modules/@react-navigation/stack/src/index.tsx b/node_modules/@react-navigation/stack/src/index.tsx
-index f20d3fb..d914384 100644
+index f20d3fb..a8475dd 100644
 --- a/node_modules/@react-navigation/stack/src/index.tsx
 +++ b/node_modules/@react-navigation/stack/src/index.tsx
 @@ -31,6 +31,7 @@ export { default as CardAnimationContext } from './utils/CardAnimationContext';
  export { default as GestureHandlerRefContext } from './utils/GestureHandlerRefContext';
  export { default as useCardAnimation } from './utils/useCardAnimation';
  export { default as useGestureHandlerRef } from './utils/useGestureHandlerRef';
-+export { CardModalGestureContext } from './utils/CardModalGestureContext';
++export { ModalGestureContext } from './utils/ModalGestureContext';
  
  /**
   * Types
-diff --git a/node_modules/@react-navigation/stack/src/utils/CardModalGestureContext.tsx b/node_modules/@react-navigation/stack/src/utils/CardModalGestureContext.tsx
+diff --git a/node_modules/@react-navigation/stack/src/utils/ModalGestureContext.ts b/node_modules/@react-navigation/stack/src/utils/ModalGestureContext.ts
 new file mode 100644
-index 0000000..4b041b8
+index 0000000..8b35adf
 --- /dev/null
-+++ b/node_modules/@react-navigation/stack/src/utils/CardModalGestureContext.tsx
-@@ -0,0 +1,25 @@
++++ b/node_modules/@react-navigation/stack/src/utils/ModalGestureContext.ts
+@@ -0,0 +1,10 @@
 +import React from 'react';
 +import { Animated } from 'react-native';
 +
-+interface CardModalGestureContextType {
++export interface ModalGestureContextType {
 +  scrollableGestureRef: React.RefObject<any>;
-+  cardModalTranslateY: Animated.Value;
++  modalTranslateY: Animated.Value;
 +}
 +
-+export const CardModalGestureContext =
-+  React.createContext<CardModalGestureContextType | null>(null);
++export const ModalGestureContext =
++  React.createContext<ModalGestureContextType | null>(null);
+diff --git a/node_modules/@react-navigation/stack/src/views/ModalGestureProvider.tsx b/node_modules/@react-navigation/stack/src/views/ModalGestureProvider.tsx
+new file mode 100644
+index 0000000..cda7e29
+--- /dev/null
++++ b/node_modules/@react-navigation/stack/src/views/ModalGestureProvider.tsx
+@@ -0,0 +1,38 @@
++import React from 'react';
++import { ModalGestureContext, ModalGestureContextType } from "../utils/ModalGestureContext"
 +
-+export const CardModalGestureContextProvider = (props: {
-+  value: CardModalGestureContextType;
-+  enable?: boolean;
++interface ModalGestureProviderProps {
++  /**
++   * Context value.
++   * 
++   * @type ModalGestureContextType
++   */
++  value: ModalGestureContextType;
++
++  /**
++   * Defines if current card is a iOS modal.
++   * 
++   * @type boolean
++   * @default false
++   */
++  enabled?: boolean;
++
++  /**
++   * Child component
++   * 
++   * @type React.ReactNode
++   */
 +  children: React.ReactNode;
-+}) => {
-+  if (props.enable) {
-+    return (
-+      <CardModalGestureContext.Provider value={props.value}>
-+        {props.children}
-+      </CardModalGestureContext.Provider>
-+    );
-+  }
-+  return <>{props.children}</>;
-+};
++}
++
++const ModalGestureProvider = ({
++  value,
++  children,
++  enabled = false
++}: ModalGestureProviderProps) => enabled ? (
++  <ModalGestureContext.Provider value={value}>
++    {children}
++  </ModalGestureContext.Provider>
++) : children;
++
++export default ModalGestureProvider;
+\ No newline at end of file
 diff --git a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
-index a013ff9..5542ab4 100755
+index a013ff9..fa5db2d 100755
 --- a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
 +++ b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
-@@ -21,6 +21,10 @@ import type {
+@@ -21,6 +21,7 @@ import type {
    TransitionSpec,
  } from '../../types';
  import CardAnimationContext from '../../utils/CardAnimationContext';
-+import {
-+  CardModalGestureContext,
-+  CardModalGestureContextProvider,
-+} from '@react-navigation/stack/src/utils/CardModalGestureContext';
++import ModalGestureProvider from '../ModalGestureProvider'
  import getDistanceForDirection from '../../utils/getDistanceForDirection';
  import getInvertedMultiplier from '../../utils/getInvertedMultiplier';
  import memoize from '../../utils/memoize';
-@@ -294,6 +298,8 @@ export default class Card extends React.Component<Props> {
+@@ -104,6 +105,8 @@ export default class Card extends React.Component<Props> {
+       ) : null,
+   };
+ 
++  private scrollableGestureRef = React.createRef<any>();
++
+   componentDidMount() {
+     this.animate({ closing: this.props.closing });
+     this.isCurrentlyMounted = true;
+@@ -294,6 +297,21 @@ export default class Card extends React.Component<Props> {
        case GestureState.END: {
          this.isSwiping.setValue(FALSE);
  
 +        this.isSwiping.removeListener
 +
++        /**
++         * if scrollable modal is enabled, and the gesture value is small than the scrollable offset,
++         * then we exit the method and reset gesture value.
++         */
++        if(this.scrollableGestureRef.current &&
++          // @ts-ignore
++          this.props.gesture._value < Math.abs(this.props.gesture._offset)
++        ) {
++          this.props.gesture.setValue(0);
++          this.props.gesture.setOffset(0);
++          return;
++        }
++
          let distance;
          let translation;
          let velocity;
-@@ -303,8 +309,16 @@ export default class Card extends React.Component<Props> {
-           gestureDirection === 'vertical-inverted'
-         ) {
-           distance = layout.height;
--          translation = nativeEvent.translationY;
--          velocity = nativeEvent.velocityY;
-+          // @ts-ignore
-+          if(this.props.gesture._offset < 0) {
-+            // @ts-ignore
-+            translation = this.props.gesture._offset - this.props.gesture._value;
-+            velocity = nativeEvent.velocityY / 2;
-+          }else{
-+            // @ts-ignore
-+            translation = this.props.gesture._value;
-+            velocity = nativeEvent.velocityY;
-+          }
-         } else {
-           distance = layout.width;
-           translation = nativeEvent.translationX;
-@@ -392,7 +406,7 @@ export default class Card extends React.Component<Props> {
+@@ -392,7 +410,7 @@ export default class Card extends React.Component<Props> {
        return {
          maxDeltaX: 15,
          minOffsetY: 5,
 -        hitSlop: { bottom: -layout.height + distance },
-+        // hitSlop: { bottom: -layout.height + distance },
++        hitSlop: this.scrollableGestureRef.current ? {} : { bottom: -layout.height + distance },
          enableTrackpadTwoFingerGesture,
        };
      } else if (gestureDirection === 'vertical-inverted') {
-@@ -425,6 +439,7 @@ export default class Card extends React.Component<Props> {
-   }
+@@ -448,6 +466,11 @@ export default class Card extends React.Component<Props> {
+       ...rest
+     } = this.props;
  
-   private contentRef = React.createRef<View>();
-+  private scrollableGestureRef = React.createRef<any>();
- 
-   render() {
-     const {
-@@ -526,10 +541,12 @@ export default class Card extends React.Component<Props> {
++    const modalGestureValue = {
++      scrollableGestureRef: this.scrollableGestureRef,
++      modalTranslateY: gesture
++    }
++
+     const interpolationProps = this.getCardAnimation(
+       interpolationIndex,
+       current,
+@@ -526,43 +549,49 @@ export default class Card extends React.Component<Props> {
              style={[styles.container, containerStyle, customContainerStyle]}
              pointerEvents="box-none"
            >
-+            <CardModalGestureContextProvider enable={!next && getIsModalPresentation(styleInterpolator)} value={{ scrollableGestureRef: this.scrollableGestureRef, cardModalTranslateY: gesture }}>
-             <PanGestureHandler
-               enabled={layout.width !== 0 && gestureEnabled}
-               onGestureEvent={handleGestureEvent}
-               onHandlerStateChange={this.handleGestureStateChange}
-+              simultaneousHandlers={this.scrollableGestureRef}
-               {...this.gestureActivationCriteria()}
+-            <PanGestureHandler
+-              enabled={layout.width !== 0 && gestureEnabled}
+-              onGestureEvent={handleGestureEvent}
+-              onHandlerStateChange={this.handleGestureStateChange}
+-              {...this.gestureActivationCriteria()}
++            <ModalGestureProvider
++              enabled={!next && getIsModalPresentation(styleInterpolator)}
++              value={modalGestureValue}
              >
-               <Animated.View
-@@ -563,6 +580,7 @@ export default class Card extends React.Component<Props> {
-                 </CardSheet>
-               </Animated.View>
-             </PanGestureHandler>
-+            </CardModalGestureContextProvider>
+-              <Animated.View
+-                needsOffscreenAlphaCompositing={hasOpacityStyle(cardStyle)}
+-                style={[styles.container, cardStyle]}
++              <PanGestureHandler
++                enabled={layout.width !== 0 && gestureEnabled}
++                onGestureEvent={handleGestureEvent}
++                onHandlerStateChange={this.handleGestureStateChange}
++                simultaneousHandlers={this.scrollableGestureRef}
++                {...this.gestureActivationCriteria()}
+               >
+-                {shadowEnabled && shadowStyle && !isTransparent ? (
+-                  <Animated.View
+-                    style={[
+-                      styles.shadow,
+-                      gestureDirection === 'horizontal'
+-                        ? [styles.shadowHorizontal, styles.shadowLeft]
+-                        : gestureDirection === 'horizontal-inverted'
+-                        ? [styles.shadowHorizontal, styles.shadowRight]
+-                        : gestureDirection === 'vertical'
+-                        ? [styles.shadowVertical, styles.shadowTop]
+-                        : [styles.shadowVertical, styles.shadowBottom],
+-                      { backgroundColor },
+-                      shadowStyle,
+-                    ]}
+-                    pointerEvents="none"
+-                  />
+-                ) : null}
+-                <CardSheet
+-                  ref={this.contentRef}
+-                  enabled={pageOverflowEnabled}
+-                  layout={layout}
+-                  style={contentStyle}
++                <Animated.View
++                  needsOffscreenAlphaCompositing={hasOpacityStyle(cardStyle)}
++                  style={[styles.container, cardStyle]}
+                 >
+-                  {children}
+-                </CardSheet>
+-              </Animated.View>
+-            </PanGestureHandler>
++                  {shadowEnabled && shadowStyle && !isTransparent ? (
++                    <Animated.View
++                      style={[
++                        styles.shadow,
++                        gestureDirection === 'horizontal'
++                          ? [styles.shadowHorizontal, styles.shadowLeft]
++                          : gestureDirection === 'horizontal-inverted'
++                          ? [styles.shadowHorizontal, styles.shadowRight]
++                          : gestureDirection === 'vertical'
++                          ? [styles.shadowVertical, styles.shadowTop]
++                          : [styles.shadowVertical, styles.shadowBottom],
++                        { backgroundColor },
++                        shadowStyle,
++                      ]}
++                      pointerEvents="none"
++                    />
++                  ) : null}
++                  <CardSheet
++                    ref={this.contentRef}
++                    enabled={pageOverflowEnabled}
++                    layout={layout}
++                    style={contentStyle}
++                  >
++                    {children}
++                  </CardSheet>
++                </Animated.View>
++              </PanGestureHandler>
++            </ModalGestureProvider>
            </Animated.View>
          </View>
        </CardAnimationContext.Provider>
