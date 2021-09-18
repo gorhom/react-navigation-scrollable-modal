@@ -4,7 +4,59 @@ import type {
   FlatList,
   NativeScrollEvent,
   NativeSyntheticEvent,
+  ScrollView,
+  SectionList,
+  VirtualizedList,
 } from "react-native";
+
+const scrollToTop = (
+  scrollableRef: React.RefObject<
+    FlatList | ScrollView | SectionList | VirtualizedList<any>
+  >
+) => {
+  if (!scrollableRef.current) {
+    return;
+  }
+
+  // scrollable is FlatList
+  if ("scrollToOffset" in scrollableRef.current) {
+    (scrollableRef.current as FlatList).scrollToOffset({
+      animated: false,
+      offset: 0,
+    });
+    return;
+  }
+
+  // scrollable is ScrollView
+  if ("scrollTo" in scrollableRef.current) {
+    (scrollableRef.current as ScrollView).scrollTo({
+      animated: false,
+      y: 0,
+    });
+    return;
+  }
+
+  // scrollable is ScrollView
+  if ("scrollTo" in scrollableRef.current) {
+    (scrollableRef.current as SectionList).scrollToLocation({
+      animated: false,
+      itemIndex: 0,
+      sectionIndex: 0,
+      viewPosition: 0,
+      viewOffset: 1000,
+    });
+    return;
+  }
+
+  // scrollable is VirtualizedList
+  if ("scrollTo" in scrollableRef.current) {
+    (scrollableRef.current as VirtualizedList<any>).scrollToOffset({
+      animated: false,
+      offset: 0,
+    });
+    return;
+  }
+};
 
 export const useScrollableModalGestureInteraction = (
   scrollableRef: React.RefObject<FlatList>
@@ -54,10 +106,7 @@ export const useScrollableModalGestureInteraction = (
       },
     }: NativeSyntheticEvent<NativeScrollEvent>) => {
       if ((y <= 0 || lockScrolling.current) && scrollableRef.current) {
-        scrollableRef.current.scrollToOffset({
-          animated: false,
-          offset: 0,
-        });
+        scrollToTop(scrollableRef);
       }
     },
     []

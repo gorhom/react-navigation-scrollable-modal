@@ -1,8 +1,8 @@
 import React, { useRef } from "react";
-import { FlatList, StyleSheet} from "react-native";
+import { FlatList, StyleSheet } from "react-native";
 import { NativeViewGestureHandler } from "react-native-gesture-handler";
 import { useScrollableModalGestureInteraction } from "../hooks/useScrollableModalGestureInteraction";
-import { Item } from '../components/Item'
+import { Item } from "../components/Item";
 
 const data = Array(40)
   .fill(0)
@@ -11,7 +11,7 @@ const data = Array(40)
 const keyExtractor = (item: any) => `item-${item}`;
 
 // @ts-ignore
-const renderItem = ({ item }) => (<Item item={item} />);
+const renderItem = ({ item }) => <Item item={item} />;
 
 export const ScrollableModalCallbacks = () => {
   const scrollableRef = useRef<FlatList>(null);
@@ -19,7 +19,7 @@ export const ScrollableModalCallbacks = () => {
     handleOnBeginDrag,
     handleOnEndDrag,
     handleOnScroll,
-    scrollableGestureRef
+    scrollableGestureRef,
   } = useScrollableModalGestureInteraction(scrollableRef);
   return (
     <NativeViewGestureHandler ref={scrollableGestureRef}>
