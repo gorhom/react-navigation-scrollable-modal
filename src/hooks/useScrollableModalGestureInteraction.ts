@@ -59,32 +59,37 @@ const scrollToTop = (
 };
 
 export const useScrollableModalGestureInteraction = (
-  scrollableRef: React.RefObject<FlatList>
+  scrollableRef: React.RefObject<
+    FlatList | ScrollView | SectionList | VirtualizedList<any>
+  >
 ) => {
   // context
-  const { scrollableGestureRef, modalTranslateY } =
-    useContext(ModalGestureContext);
+  const context = useContext(ModalGestureContext);
+  if (!context) {
+    throw new Error(
+      "Couldn't find values for modal gesture. Are you inside a screen in Modal Stack?"
+    );
+  }
 
   // variables
+  const { modalTranslateY, scrollableGestureRef } = context;
   const lockScrolling = useRef(true);
 
-  // callback
+  // methods
   const setLockScrolling = useCallback(
-    ({ value }) => {
+    (value: number) => {
       lockScrolling.current = value > 0;
     },
     [lockScrolling]
   );
-  const handleSettingOffset = useCallback(
-    ({
-      nativeEvent: {
-        contentOffset: { y },
-      },
-    }: NativeSyntheticEvent<NativeScrollEvent>) => {
-      modalTranslateY.setOffset(-y);
+  const setOffset = useCallback(
+    (value: number) => {
+      modalTranslateY.setOffset(-value);
     },
     [modalTranslateY]
   );
+
+  // callback
   const handleOnBeginDrag = useCallback(
     ({
       nativeEvent: {
@@ -93,11 +98,12 @@ export const useScrollableModalGestureInteraction = (
     }: NativeSyntheticEvent<NativeScrollEvent>) => {
       // @ts-ignore
       if (modalTranslateY._value === 0) {
-        lockScrolling.current = false;
+        setLockScrolling(0);
       }
-      modalTranslateY.setOffset(-y);
+
+      setOffset(y);
     },
-    []
+    [setLockScrolling, setOffset, modalTranslateY]
   );
   const handleOnScroll = useCallback(
     ({
@@ -105,25 +111,37 @@ export const useScrollableModalGestureInteraction = (
         contentOffset: { y },
       },
     }: NativeSyntheticEvent<NativeScrollEvent>) => {
-      if ((y <= 0 || lockScrolling.current) && scrollableRef.current) {
+      if (y <= 0 || lockScrolling.current) {
         scrollToTop(scrollableRef);
       }
     },
     []
   );
+  const handleOnEndDrag = useCallback(
+    ({
+      nativeEvent: {
+        contentOffset: { y },
+      },
+    }: NativeSyntheticEvent<NativeScrollEvent>) => {
+      setOffset(y);
+    },
+    [setOffset]
+  );
 
   // effects
   useEffect(() => {
-    const listener = modalTranslateY.addListener(setLockScrolling);
+    const listener = modalTranslateY.addListener(({ value }) =>
+      setLockScrolling(value)
+    );
     return () => {
       modalTranslateY.removeListener(listener);
     };
-  }, []);
+  }, [modalTranslateY, setLockScrolling]);
 
   return {
     scrollableGestureRef,
     handleOnScroll,
-    handleOnEndDrag: handleSettingOffset,
+    handleOnEndDrag: handleOnEndDrag,
     handleOnBeginDrag: handleOnBeginDrag,
   };
 };

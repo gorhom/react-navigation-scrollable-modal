@@ -56,7 +56,7 @@ index 0000000..8b35adf
 +  React.createContext<ModalGestureContextType | null>(null);
 diff --git a/node_modules/@react-navigation/stack/src/views/ModalGestureProvider.tsx b/node_modules/@react-navigation/stack/src/views/ModalGestureProvider.tsx
 new file mode 100644
-index 0000000..cda7e29
+index 0000000..6e0157d
 --- /dev/null
 +++ b/node_modules/@react-navigation/stack/src/views/ModalGestureProvider.tsx
 @@ -0,0 +1,38 @@
@@ -87,7 +87,7 @@ index 0000000..cda7e29
 +  children: React.ReactNode;
 +}
 +
-+const ModalGestureProvider = ({
++const ModalGestureProvider: React.FC<ModalGestureProviderProps> = ({
 +  value,
 +  children,
 +  enabled = false
@@ -95,12 +95,12 @@ index 0000000..cda7e29
 +  <ModalGestureContext.Provider value={value}>
 +    {children}
 +  </ModalGestureContext.Provider>
-+) : children;
++) : children as any;
 +
 +export default ModalGestureProvider;
 \ No newline at end of file
 diff --git a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
-index a013ff9..fa5db2d 100755
+index a013ff9..ce9304b 100755
 --- a/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
 +++ b/node_modules/@react-navigation/stack/src/views/Stack/Card.tsx
 @@ -21,6 +21,7 @@ import type {
@@ -111,16 +111,31 @@ index a013ff9..fa5db2d 100755
  import getDistanceForDirection from '../../utils/getDistanceForDirection';
  import getInvertedMultiplier from '../../utils/getInvertedMultiplier';
  import memoize from '../../utils/memoize';
-@@ -104,6 +105,8 @@ export default class Card extends React.Component<Props> {
+@@ -104,6 +105,9 @@ export default class Card extends React.Component<Props> {
        ) : null,
    };
  
 +  private scrollableGestureRef = React.createRef<any>();
++  private scrollableOffset = new Animated.Value(0);
 +
    componentDidMount() {
      this.animate({ closing: this.props.closing });
      this.isCurrentlyMounted = true;
-@@ -294,6 +297,21 @@ export default class Card extends React.Component<Props> {
+@@ -238,6 +242,13 @@ export default class Card extends React.Component<Props> {
+     return getDistanceForDirection(layout, gestureDirection);
+   };
+ 
++  private getIsScrollableModal = () => {
++    return (
++      this.scrollableGestureRef.current &&
++      getIsModalPresentation(this.props.styleInterpolator)
++    );
++  };
++
+   private setPointerEventsEnabled = (enabled: boolean) => {
+     const pointerEvents = enabled ? 'box-none' : 'none';
+ 
+@@ -294,6 +305,21 @@ export default class Card extends React.Component<Props> {
        case GestureState.END: {
          this.isSwiping.setValue(FALSE);
  
@@ -130,7 +145,7 @@ index a013ff9..fa5db2d 100755
 +         * if scrollable modal is enabled, and the gesture value is small than the scrollable offset,
 +         * then we exit the method and reset gesture value.
 +         */
-+        if(this.scrollableGestureRef.current &&
++        if(this.getIsScrollableModal() &&
 +          // @ts-ignore
 +          this.props.gesture._value < Math.abs(this.props.gesture._offset)
 +        ) {
@@ -142,16 +157,16 @@ index a013ff9..fa5db2d 100755
          let distance;
          let translation;
          let velocity;
-@@ -392,7 +410,7 @@ export default class Card extends React.Component<Props> {
+@@ -392,7 +418,7 @@ export default class Card extends React.Component<Props> {
        return {
          maxDeltaX: 15,
          minOffsetY: 5,
 -        hitSlop: { bottom: -layout.height + distance },
-+        hitSlop: this.scrollableGestureRef.current ? {} : { bottom: -layout.height + distance },
++        hitSlop: this.getIsScrollableModal() ? {} : { bottom: -layout.height + distance },
          enableTrackpadTwoFingerGesture,
        };
      } else if (gestureDirection === 'vertical-inverted') {
-@@ -448,6 +466,11 @@ export default class Card extends React.Component<Props> {
+@@ -448,6 +474,11 @@ export default class Card extends React.Component<Props> {
        ...rest
      } = this.props;
  
@@ -163,7 +178,7 @@ index a013ff9..fa5db2d 100755
      const interpolationProps = this.getCardAnimation(
        interpolationIndex,
        current,
-@@ -526,43 +549,49 @@ export default class Card extends React.Component<Props> {
+@@ -526,43 +557,49 @@ export default class Card extends React.Component<Props> {
              style={[styles.container, containerStyle, customContainerStyle]}
              pointerEvents="box-none"
            >
@@ -173,7 +188,7 @@ index a013ff9..fa5db2d 100755
 -              onHandlerStateChange={this.handleGestureStateChange}
 -              {...this.gestureActivationCriteria()}
 +            <ModalGestureProvider
-+              enabled={!next && getIsModalPresentation(styleInterpolator)}
++              enabled={getIsModalPresentation(styleInterpolator)}
 +              value={modalGestureValue}
              >
 -              <Animated.View
